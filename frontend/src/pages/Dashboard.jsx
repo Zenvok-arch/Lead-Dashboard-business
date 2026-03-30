@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Plus, BarChart3, Users, PhoneCall, TrendingUp, LogOut, Menu, X } from 'lucide-react';
+import { Search, Plus, BarChart3, Users, PhoneCall, TrendingUp, LogOut, Menu, X, Trash2, Play } from 'lucide-react';
 import LeadTable from '../components/LeadTable';
 import UploadCSV from '../components/UploadCSV';
 import LeadForm from '../components/LeadForm';
@@ -11,19 +11,24 @@ const Dashboard = () => {
     const [search, setSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState('All');
     const [minRating, setMinRating] = useState('');
+    const [maxRating, setMaxRating] = useState('');
     const [minReviews, setMinReviews] = useState('');
+    const [maxReviews, setMaxReviews] = useState('');
+    const [sortBy, setSortBy] = useState('');
     const [noWebsiteOnly, setNoWebsiteOnly] = useState(false);
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [editingLead, setEditingLead] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [selectedLeads, setSelectedLeads] = useState([]);
 
     const fetchLeads = async () => {
         setLoading(true);
         try {
             const res = await api.getLeads();
-            setLeads(res.data);
-            setFilteredLeads(res.data);
+            const data = Array.isArray(res.data) ? res.data : [];
+            setLeads(data);
+            setFilteredLeads(data);
         } catch (err) {
             console.error('Error fetching leads:', err);
         } finally {
@@ -36,7 +41,7 @@ const Dashboard = () => {
     }, []);
 
     useEffect(() => {
-        let result = leads;
+        let result = Array.isArray(leads) ? leads : [];
         if (search) {
             result = result.filter(lead =>
                 lead.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -49,14 +54,41 @@ const Dashboard = () => {
         if (minRating) {
             result = result.filter(lead => (lead.rating || 0) >= Number(minRating));
         }
+        if (maxRating) {
+            result = result.filter(lead => (lead.rating || 0) <= Number(maxRating));
+        }
         if (minReviews) {
             result = result.filter(lead => (lead.reviews || 0) >= Number(minReviews));
+        }
+        if (maxReviews) {
+            result = result.filter(lead => (lead.reviews || 0) <= Number(maxReviews));
         }
         if (noWebsiteOnly) {
             result = result.filter(lead => !lead.website || lead.website.trim() === "");
         }
+
+        if (sortBy) {
+            const [field, order] = sortBy.split('-');
+            result = [...result].sort((a, b) => {
+                let valA = a[field] || '';
+                let valB = b[field] || '';
+                if (field === 'rating' || field === 'reviews') {
+                    valA = Number(valA);
+                    valB = Number(valB);
+                } else if (field === 'createdAt' || field === 'lastContacted') {
+                    valA = valA ? new Date(valA).getTime() : 0;
+                    valB = valB ? new Date(valB).getTime() : 0;
+                } else {
+                    valA = String(valA).toLowerCase();
+                    valB = String(valB).toLowerCase();
+                }
+                if (valA < valB) return order === 'asc' ? -1 : 1;
+                if (valA > valB) return order === 'asc' ? 1 : -1;
+                return 0;
+            });
+        }
         setFilteredLeads(result);
-    }, [search, statusFilter, minRating, minReviews, noWebsiteOnly, leads]);
+    }, [search, statusFilter, minRating, maxRating, minReviews, maxReviews, noWebsiteOnly, sortBy, leads]);
 
     const handleSaveLead = async (formData) => {
         try {
@@ -89,12 +121,45 @@ const Dashboard = () => {
         setIsFormOpen(true);
     };
 
-    // Stats
-    const totalLeads = leads.length;
-    const calledLeads = leads.filter(l => l.status === 'Called' || l.status === 'Interested' || l.status === 'Closed').length;
-    const closedLeads = leads.filter(l => l.status === 'Closed').length;
+    const handleBulkDelete = async () => {
+        if (!selectedLeads.length) return;
+        if (window.confirm(`Are you sure you want to delete ${selectedLeads.length} selected leads?`)) {
+            try {
+                await api.bulkDeleteLeads(selectedLeads);
+                setSelectedLeads([]);
+                fetchLeads();
+            } catch (err) {
+                console.error('Error in bulk delete:', err);
+            }
+        }
+    };
 
-    const hotLeadsCount = leads.filter(lead => {
+    const handleUpdateLeadStatus = async (id, data) => {
+        try {
+            await api.updateLead(id, data);
+            fetchLeads(); // refresh leads to reflect changes
+        } catch (err) {
+            console.error('Error updating status:', err);
+        }
+    };
+
+    const callNextLead = () => {
+        const nextLead = filteredLeads.find(l => l.status === 'Not Called');
+        if (nextLead) {
+            handleUpdateLeadStatus(nextLead._id, { status: 'Called', lastContacted: new Date() });
+            window.location.href = `tel:${nextLead.phone}`;
+        } else {
+            alert("No 'Not Called' leads available in the current filter list.");
+        }
+    };
+
+    // Stats
+    const safeLeads = Array.isArray(leads) ? leads : [];
+    const totalLeads = safeLeads.length;
+    const calledLeads = safeLeads.filter(l => l.status === 'Called' || l.status === 'Interested' || l.status === 'Closed').length;
+    const closedLeads = safeLeads.filter(l => l.status === 'Closed').length;
+
+    const hotLeadsCount = safeLeads.filter(lead => {
         const noWebsite = !lead.website || lead.website.trim() === "";
         return lead.rating >= 4 && lead.reviews >= 50 && noWebsite;
     }).length;
@@ -115,13 +180,21 @@ const Dashboard = () => {
                         <Menu size={24} />
                     </button>
                 </div>
-                <div className="flex items-center space-x-4 w-full md:w-auto">
+                <div className="flex flex-wrap items-center justify-start md:justify-end gap-3 w-full md:w-auto">
+                    <button
+                        onClick={callNextLead}
+                        className="glass text-primary border border-primary/30 px-5 py-2.5 rounded-xl font-bold flex items-center space-x-2 shadow-xl shadow-primary/10 hover:bg-primary/20 hover:text-white transition-all group"
+                        title="Call the next uncontacted lead in list"
+                    >
+                        <Play size={18} className="text-primary group-hover:text-white transition-colors" />
+                        <span className="text-sm md:text-base">Call Next</span>
+                    </button>
                     <button
                         onClick={() => setIsFormOpen(true)}
-                        className="bg-gradient-main px-6 py-3 rounded-xl font-bold flex items-center space-x-2 shadow-xl shadow-primary/20 hover:scale-105 transition-all"
+                        className="bg-gradient-main text-white px-5 py-2.5 rounded-xl font-bold flex items-center space-x-2 shadow-xl shadow-primary/20 hover:scale-105 transition-all"
                     >
-                        <Plus size={20} />
-                        <span>Add New Lead</span>
+                        <Plus size={18} />
+                        <span className="text-sm md:text-base">Add Lead</span>
                     </button>
                     {/* <button className="glass p-3 rounded-xl text-gray-400 hover:text-white transition-colors">
                         <LogOut size={20} />
@@ -204,28 +277,71 @@ const Dashboard = () => {
 
                         {/* Rating Filter */}
                         <div className="space-y-2">
-                            <label className="text-gray-400 font-bold block text-sm">Min Rating</label>
-                            <input
-                                type="number"
-                                placeholder="0 - 5"
-                                value={minRating}
-                                onChange={(e) => setMinRating(e.target.value)}
-                                className="w-full bg-dark/50 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-primary transition-all text-sm shadow-inner"
-                                min="0" max="5" step="0.1"
-                            />
+                            <label className="text-gray-400 font-bold block text-sm">Rating Range</label>
+                            <div className="flex gap-2">
+                                <input
+                                    type="number"
+                                    placeholder="Min"
+                                    value={minRating}
+                                    onChange={(e) => setMinRating(e.target.value)}
+                                    className="w-full bg-dark/50 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-primary transition-all text-sm shadow-inner"
+                                    min="0" max="5" step="0.1"
+                                />
+                                <input
+                                    type="number"
+                                    placeholder="Max"
+                                    value={maxRating}
+                                    onChange={(e) => setMaxRating(e.target.value)}
+                                    className="w-full bg-dark/50 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-primary transition-all text-sm shadow-inner"
+                                    min="0" max="5" step="0.1"
+                                />
+                            </div>
                         </div>
 
                         {/* Reviews Filter */}
                         <div className="space-y-2">
-                            <label className="text-gray-400 font-bold block text-sm">Min Reviews</label>
-                            <input
-                                type="number"
-                                placeholder="e.g. 100"
-                                value={minReviews}
-                                onChange={(e) => setMinReviews(e.target.value)}
-                                className="w-full bg-dark/50 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-primary transition-all text-sm shadow-inner"
-                                min="0"
-                            />
+                            <label className="text-gray-400 font-bold block text-sm">Reviews Range</label>
+                            <div className="flex gap-2">
+                                <input
+                                    type="number"
+                                    placeholder="Min"
+                                    value={minReviews}
+                                    onChange={(e) => setMinReviews(e.target.value)}
+                                    className="w-full bg-dark/50 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-primary transition-all text-sm shadow-inner"
+                                    min="0"
+                                />
+                                <input
+                                    type="number"
+                                    placeholder="Max"
+                                    value={maxReviews}
+                                    onChange={(e) => setMaxReviews(e.target.value)}
+                                    className="w-full bg-dark/50 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-primary transition-all text-sm shadow-inner"
+                                    min="0"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Sort By */}
+                        <div className="space-y-2">
+                            <label className="text-gray-400 font-bold block text-sm">Sort By</label>
+                            <div className="relative">
+                                <select
+                                    value={sortBy}
+                                    onChange={(e) => setSortBy(e.target.value)}
+                                    className="w-full bg-dark/80 border border-white/20 rounded-xl px-4 py-3 pr-10 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-sm shadow-inner text-white appearance-none cursor-pointer"
+                                >
+                                    <option value="" className="bg-dark text-white">Default (Database Order)</option>
+                                    <option value="rating-desc" className="bg-dark text-white">Rating: High to Low</option>
+                                    <option value="rating-asc" className="bg-dark text-white">Rating: Low to High</option>
+                                    <option value="reviews-desc" className="bg-dark text-white">Reviews: High to Low</option>
+                                    <option value="reviews-asc" className="bg-dark text-white">Reviews: Low to High</option>
+                                    <option value="lastContacted-desc" className="bg-dark text-white">Recently Contacted</option>
+                                    <option value="lastContacted-asc" className="bg-dark text-white">Oldest Contacted</option>
+                                </select>
+                                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-400">
+                                    <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" /></svg>
+                                </div>
+                            </div>
                         </div>
 
                         {/* Website Checkbox */}
@@ -235,7 +351,7 @@ const Dashboard = () => {
                                 id="noWebsite"
                                 checked={noWebsiteOnly}
                                 onChange={(e) => setNoWebsiteOnly(e.target.checked)}
-                                className="w-4 h-4 rounded accent-primary bg-dark/50 border-white/10 cursor-pointer"
+                                className="w-5 h-5 rounded-md border-2 border-white/20 bg-dark text-primary outline-none focus:outline-none cursor-pointer transition-all appearance-none checked:bg-primary checked:border-primary relative after:content-[''] after:absolute after:hidden checked:after:block after:left-[5px] after:top-[1px] after:w-1.5 after:h-2.5 after:border-white after:border-b-2 after:border-r-2 after:rotate-45"
                             />
                             <label htmlFor="noWebsite" className="text-gray-400 font-bold text-sm cursor-pointer select-none">
                                 No Website Only
@@ -246,22 +362,26 @@ const Dashboard = () => {
 
                 {/* Table Area */}
                 <div className="lg:col-span-3">
-                    {/* Hot Leads Highlight Card */}
-                    <div className="bg-red-500/10 border border-red-500/20 shadow-[0_0_15px_rgba(239,68,68,0.15)] rounded-2xl p-4 mb-6 flex items-center justify-between">
-                        <div className="flex items-center space-x-4">
-                            <div className="text-3xl bg-red-500/20 p-3 rounded-full flex items-center justify-center">🔥</div>
-                            <div>
-                                <h3 className="text-red-400 font-bold text-sm uppercase tracking-wider">Hot Leads</h3>
-                                <p className="text-gray-300 text-xs mt-1">High rating, many reviews, no website.</p>
+                    <div className="mb-6">
+                        <div className="w-full bg-red-500/10 border border-red-500/20 shadow-[0_0_15px_rgba(239,68,68,0.15)] rounded-2xl p-4 flex items-center justify-between">
+                            <div className="flex items-center space-x-4">
+                                <div className="text-3xl bg-red-500/20 p-3 rounded-full flex items-center justify-center">🔥</div>
+                                <div>
+                                    <h3 className="text-red-400 font-bold text-sm uppercase tracking-wider">Hot Leads</h3>
+                                    <p className="text-gray-300 text-xs mt-1">High rating, many reviews, no website.</p>
+                                </div>
                             </div>
+                            <div className="text-3xl font-black text-white">{hotLeadsCount}</div>
                         </div>
-                        <div className="text-3xl font-black text-white">{hotLeadsCount}</div>
                     </div>
 
                     <LeadTable
                         leads={filteredLeads}
                         onEdit={handleEditLead}
                         onDelete={handleDeleteLead}
+                        selectedLeads={selectedLeads}
+                        setSelectedLeads={setSelectedLeads}
+                        onUpdateLead={handleUpdateLeadStatus}
                     />
                 </div>
             </div>
@@ -277,6 +397,41 @@ const Dashboard = () => {
                     onSave={handleSaveLead}
                 />
             )}
+
+            {/* Bulk Action Popup */}
+            <div 
+                className={`fixed bottom-0 left-0 right-0 p-4 md:p-6 flex justify-center z-50 pointer-events-none transition-all duration-300 ease-in-out ${
+                    selectedLeads.length > 0 
+                    ? 'opacity-100 translate-y-0' 
+                    : 'opacity-0 translate-y-8'
+                }`}
+            >
+                <div className={`bg-dark/80 backdrop-blur-xl border border-white/10 shadow-lg rounded-2xl p-3 md:p-4 flex items-center justify-between w-full max-w-2xl gap-4 pointer-events-auto ${selectedLeads.length > 0 ? 'scale-100' : 'scale-95'} transition-transform duration-300`}>
+                    <div className="flex items-center space-x-3 text-white">
+                        <div className="bg-primary/20 text-primary w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center font-bold text-sm md:text-base border border-primary/20">
+                            {selectedLeads.length}
+                        </div>
+                        <span className="font-bold text-sm md:text-base text-gray-200">Selected</span>
+                    </div>
+                    
+                    <div className="flex items-center space-x-2 md:space-x-4">
+                        <button
+                            onClick={() => setSelectedLeads([])}
+                            className="px-3 py-2 md:px-4 md:py-2 rounded-xl font-bold text-gray-400 hover:text-white hover:bg-white/10 transition-all text-sm md:text-base"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            onClick={handleBulkDelete}
+                            className="bg-red-500/20 text-red-500 border border-red-500/30 px-4 py-2 md:px-6 md:py-2.5 rounded-xl font-bold flex items-center space-x-2 shadow-lg shadow-red-500/10 hover:bg-red-500 hover:text-white transition-all group text-sm md:text-base"
+                        >
+                            <Trash2 size={18} className="group-hover:animate-bounce" />
+                            <span className="hidden sm:inline">Delete All</span>
+                            <span className="sm:hidden">Delete</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
     );
 };

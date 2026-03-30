@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Upload, FileText, CheckCircle, AlertCircle } from 'lucide-react';
 import * as api from '../services/api';
 
@@ -6,9 +6,13 @@ const UploadCSV = ({ onUploadSuccess }) => {
     const [file, setFile] = useState(null);
     const [loading, setLoading] = useState(false);
     const [status, setStatus] = useState(null); // 'success', 'error'
+    const fileInputRef = useRef(null);
 
     const handleFileChange = (e) => {
-        setFile(e.target.files[0]);
+        if (e.target.files && e.target.files[0]) {
+            setFile(e.target.files[0]);
+            setStatus(null); // clear previous success/error messages when a new file is chosen
+        }
     };
 
     const handleUpload = async () => {
@@ -21,12 +25,21 @@ const UploadCSV = ({ onUploadSuccess }) => {
 
         try {
             const response = await api.uploadCSV(formData);
-            setStatus('success');
+            setStatus({ type: 'success', msg: `Successfully added ${response.data.leadsAdded} new leads!` });
             setFile(null);
+            if (fileInputRef.current) {
+                fileInputRef.current.value = '';
+            }
             onUploadSuccess(response.data.leadsAdded);
+            
+            // Auto-clear success message after 5 seconds
+            setTimeout(() => {
+                setStatus((current) => current?.type === 'success' ? null : current);
+            }, 5000);
         } catch (err) {
             console.error(err);
-            setStatus('error');
+            const errorMsg = err.response?.data?.error || 'Failed to upload file.';
+            setStatus({ type: 'error', msg: errorMsg });
         } finally {
             setLoading(false);
         }
@@ -44,7 +57,7 @@ const UploadCSV = ({ onUploadSuccess }) => {
                 <label className="cursor-pointer bg-dark/50 border border-primary/30 rounded-lg px-4 py-2 hover:bg-primary/20 transition-all flex items-center space-x-2">
                     <FileText size={18} className="text-primary" />
                     <span className="text-sm font-medium">{file ? file.name : "Choose CSV"}</span>
-                    <input type="file" className="hidden" accept=".csv" onChange={handleFileChange} />
+                    <input type="file" className="hidden" accept=".csv" onChange={handleFileChange} ref={fileInputRef} />
                 </label>
             </div>
 
@@ -58,16 +71,16 @@ const UploadCSV = ({ onUploadSuccess }) => {
                 {loading ? "Processing..." : "Upload Leads"}
             </button>
 
-            {status === 'success' && (
+            {status?.type === 'success' && (
                 <div className="flex items-center space-x-2 text-green-400 animate-bounce">
                     <CheckCircle size={18} />
-                    <span className="text-xs">Uploade Successfully!</span>
+                    <span className="text-xs">{status.msg}</span>
                 </div>
             )}
-            {status === 'error' && (
+            {status?.type === 'error' && (
                 <div className="flex items-center space-x-2 text-red-400">
                     <AlertCircle size={18} />
-                    <span className="text-xs">Failed to upload file.</span>
+                    <span className="text-xs">{status.msg}</span>
                 </div>
             )}
         </div>

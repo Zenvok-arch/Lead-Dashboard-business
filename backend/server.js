@@ -3,6 +3,7 @@ const cors = require('cors');
 const connectDB = require('./db');
 const leadRoutes = require('./routes/leadRoutes');
 const fs = require('fs');
+const path = require('path')
 
 require('dotenv').config();
 
@@ -22,6 +23,11 @@ if (!fs.existsSync('uploads')) {
 
 // Routes
 app.use('/api/leads', leadRoutes);
+
+app.use(express.static(path.join(__dirname, "../frontend/dist")));
+app.use((req, res) => {
+    res.sendFile(path.join(__dirname, "../frontend/dist", "index.html"));
+});
 
 const PORT = process.env.PORT || 5000;
 

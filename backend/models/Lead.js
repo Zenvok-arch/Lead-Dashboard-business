@@ -13,6 +13,7 @@ const LeadSchema = new mongoose.Schema({
         default: "Not Called" 
     },
     notes: { type: String, default: "" },
+    lastContacted: { type: Date, default: null },
     createdAt: { type: Date, default: Date.now }
 });
 
