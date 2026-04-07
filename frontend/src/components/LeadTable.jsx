@@ -1,8 +1,8 @@
 import React from 'react';
 import { Phone, MessageCircle, MapPin, ExternalLink, Edit3, Trash2, Star } from 'lucide-react';
 
-const LeadTable = ({ leads, onEdit, onDelete, selectedLeads = [], setSelectedLeads = () => {}, onUpdateLead }) => {
-    
+const LeadTable = ({ leads, onEdit, onDelete, selectedLeads = [], setSelectedLeads = () => { }, onUpdateLead }) => {
+
     // Select all logic
     const handleSelectAll = (e) => {
         if (e.target.checked) {
@@ -42,7 +42,7 @@ const LeadTable = ({ leads, onEdit, onDelete, selectedLeads = [], setSelectedLea
         const mins = Math.floor(diff / 60000);
         return mins > 0 ? `${mins}m ago` : 'Just now';
     };
-    
+
     const getStatusColor = (status) => {
         switch (status) {
             case 'Closed': return 'bg-green-500/20 text-green-500 border-green-500/30';
@@ -62,7 +62,7 @@ const LeadTable = ({ leads, onEdit, onDelete, selectedLeads = [], setSelectedLea
                             <th className="px-6 py-4 text-xs font-bold w-16">
                                 <input
                                     type="checkbox"
-                                    className="w-5 h-5 rounded-md border-2 border-white/20 bg-dark text-primary outline-none focus:outline-none cursor-pointer transition-all appearance-none checked:bg-primary checked:border-primary relative after:content-[''] after:absolute after:hidden checked:after:block after:left-[5px] after:top-[1px] after:w-1.5 after:h-2.5 after:border-white after:border-b-2 after:border-r-2 after:rotate-45"
+                                    className="w-5 h-5 rounded-md border-2 border-white/20 bg-dark text-primary outline-none focus:outline-none cursor-pointer transition-all appearance-none checked:bg-primary checked:border-primary relative after:content-[''] after:absolute after:hidden checked:after:block after:left-[5px] after:top-px after:w-1.5 after:h-2.5 after:border-white after:border-b-2 after:border-r-2 after:rotate-45"
                                     checked={leads.length > 0 && selectedLeads.length === leads.length}
                                     onChange={handleSelectAll}
                                 />
@@ -79,7 +79,7 @@ const LeadTable = ({ leads, onEdit, onDelete, selectedLeads = [], setSelectedLea
                                 <td className="px-6 py-4">
                                     <input
                                         type="checkbox"
-                                        className="w-5 h-5 rounded-md border-2 border-white/20 bg-dark text-primary outline-none focus:outline-none cursor-pointer transition-all appearance-none checked:bg-primary checked:border-primary relative after:content-[''] after:absolute after:hidden checked:after:block after:left-[5px] after:top-[1px] after:w-1.5 after:h-2.5 after:border-white after:border-b-2 after:border-r-2 after:rotate-45"
+                                        className="w-5 h-5 rounded-md border-2 border-white/20 bg-dark text-primary outline-none focus:outline-none cursor-pointer transition-all appearance-none checked:bg-primary checked:border-primary relative after:content-[''] after:absolute after:hidden checked:after:block after:left-[5px] after:top-px after:w-1.5 after:h-2.5 after:border-white after:border-b-2 after:border-r-2 after:rotate-45"
                                         checked={selectedLeads.includes(lead._id)}
                                         onChange={(e) => handleSelectLead(e, lead._id)}
                                     />
@@ -154,14 +154,14 @@ const LeadTable = ({ leads, onEdit, onDelete, selectedLeads = [], setSelectedLea
             <div className="md:hidden flex flex-col p-4 space-y-4">
                 {leads.map((lead) => (
                     <div key={lead._id} className="bg-white/5 border border-white/10 rounded-2xl p-5 shadow-lg flex flex-col space-y-4">
-                        
+
                         {/* Header: Name and Status */}
                         <div className="flex justify-between items-start gap-4">
                             <div className="flex items-start space-x-3 overflow-hidden">
                                 <div className="pt-1">
                                     <input
                                         type="checkbox"
-                                        className="w-5 h-5 rounded-md border-2 border-white/20 bg-dark text-primary outline-none focus:outline-none cursor-pointer transition-all appearance-none checked:bg-primary checked:border-primary relative after:content-[''] after:absolute after:hidden checked:after:block after:left-[5px] after:top-[1px] after:w-1.5 after:h-2.5 after:border-white after:border-b-2 after:border-r-2 after:rotate-45 flex-shrink-0"
+                                        className="w-5 h-5 rounded-md border-2 border-white/20 bg-dark text-primary outline-none focus:outline-none cursor-pointer transition-all appearance-none checked:bg-primary checked:border-primary relative after:content-[''] after:absolute after:hidden checked:after:block after:left-[5px] after:top-px after:w-1.5 after:h-2.5 after:border-white after:border-b-2 after:border-r-2 after:rotate-45 shrink-0"
                                         checked={selectedLeads.includes(lead._id)}
                                         onChange={(e) => handleSelectLead(e, lead._id)}
                                     />
@@ -171,12 +171,12 @@ const LeadTable = ({ leads, onEdit, onDelete, selectedLeads = [], setSelectedLea
                                     {lead.website && (
                                         <a href={lead.website} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline flex items-center space-x-1 mt-1 truncate">
                                             <span className="truncate">{lead.website.replace(/(^\w+:|^)\/\//, '')}</span>
-                                            <ExternalLink size={10} className="flex-shrink-0" />
+                                            <ExternalLink size={10} className="shrink-0" />
                                         </a>
                                     )}
                                 </div>
                             </div>
-                            <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                            <div className="flex flex-col items-end gap-1 shrink-0">
                                 <span className={`inline-flex px-3 py-1 rounded-full text-[10px] font-bold border uppercase ${getStatusColor(lead.status)}`}>
                                     {lead.status}
                                 </span>
@@ -222,7 +222,7 @@ const LeadTable = ({ leads, onEdit, onDelete, selectedLeads = [], setSelectedLea
                                     </a>
                                 )}
                             </div>
-                            
+
                             <div className="flex items-center space-x-2">
                                 <button onClick={() => onEdit(lead)} className="w-10 h-10 rounded-full bg-purple-500/20 text-purple-500 flex items-center justify-center hover:bg-purple-500 hover:text-white transition-all active:scale-95" title="Edit">
                                     <Edit3 size={16} />

@@ -258,8 +258,8 @@ const Dashboard = () => {
                                     key={status}
                                     onClick={() => setStatusFilter(status)}
                                     className={`px-3 py-2 rounded-xl text-[10px] font-bold border transition-all ${statusFilter === status
-                                            ? 'bg-primary border-primary text-white shadow-lg shadow-primary/20 scale-105'
-                                            : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10'
+                                        ? 'bg-primary border-primary text-white shadow-lg shadow-primary/20 scale-105'
+                                        : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10'
                                         }`}
                                 >
                                     {status}
@@ -343,7 +343,7 @@ const Dashboard = () => {
                                 id="noWebsite"
                                 checked={noWebsiteOnly}
                                 onChange={(e) => setNoWebsiteOnly(e.target.checked)}
-                                className="w-5 h-5 rounded-md border-2 border-white/20 bg-dark text-primary outline-none focus:outline-none cursor-pointer transition-all appearance-none checked:bg-primary checked:border-primary relative after:content-[''] after:absolute after:hidden checked:after:block after:left-[5px] after:top-[1px] after:w-1.5 after:h-2.5 after:border-white after:border-b-2 after:border-r-2 after:rotate-45"
+                                className="w-5 h-5 rounded-md border-2 border-white/20 bg-dark text-primary outline-none focus:outline-none cursor-pointer transition-all appearance-none checked:bg-primary checked:border-primary relative after:content-[''] after:absolute after:hidden checked:after:block after:left-[5px] after:top-px after:w-1.5 after:h-2.5 after:border-white after:border-b-2 after:border-r-2 after:rotate-45"
                             />
                             <label htmlFor="noWebsite" className="text-gray-400 font-bold text-sm cursor-pointer select-none">
                                 No Website Only
@@ -370,7 +370,7 @@ const Dashboard = () => {
                                         id="showHotLeadsOnly"
                                         checked={showHotLeadsOnly}
                                         onChange={(e) => setShowHotLeadsOnly(e.target.checked)}
-                                        className="w-5 h-5 rounded-md border-2 border-red-500/50 bg-dark text-red-500 outline-none focus:outline-none cursor-pointer transition-all appearance-none checked:bg-red-500 checked:border-red-500 relative after:content-[''] after:absolute after:hidden checked:after:block after:left-[5px] after:top-[1px] after:w-1.5 after:h-2.5 after:border-white after:border-b-2 after:border-r-2 after:rotate-45"
+                                        className="w-5 h-5 rounded-md border-2 border-red-500/50 bg-dark text-red-500 outline-none focus:outline-none cursor-pointer transition-all appearance-none checked:bg-red-500 checked:border-red-500 relative after:content-[''] after:absolute after:hidden checked:after:block after:left-[5px] after:top-px after:w-1.5 after:h-2.5 after:border-white after:border-b-2 after:border-r-2 after:rotate-45"
                                     />
                                     <label htmlFor="showHotLeadsOnly" className="text-red-400 font-bold text-sm cursor-pointer select-none">
                                         Show Only
@@ -421,12 +421,11 @@ const Dashboard = () => {
             )}
 
             {/* Bulk Action Popup */}
-            <div 
-                className={`fixed bottom-0 left-0 right-0 p-4 md:p-6 flex justify-center z-50 pointer-events-none transition-all duration-300 ease-in-out ${
-                    selectedLeads.length > 0 
-                    ? 'opacity-100 translate-y-0' 
-                    : 'opacity-0 translate-y-8'
-                }`}
+            <div
+                className={`fixed bottom-0 left-0 right-0 p-4 md:p-6 flex justify-center z-50 pointer-events-none transition-all duration-300 ease-in-out ${selectedLeads.length > 0
+                        ? 'opacity-100 translate-y-0'
+                        : 'opacity-0 translate-y-8'
+                    }`}
             >
                 <div className={`bg-dark/80 backdrop-blur-xl border border-white/10 shadow-lg rounded-2xl p-3 md:p-4 flex items-center justify-between w-full max-w-2xl gap-4 pointer-events-auto ${selectedLeads.length > 0 ? 'scale-100' : 'scale-95'} transition-transform duration-300`}>
                     <div className="flex items-center space-x-3 text-white">
@@ -435,7 +434,7 @@ const Dashboard = () => {
                         </div>
                         <span className="font-bold text-sm md:text-base text-gray-200">Selected</span>
                     </div>
-                    
+
                     <div className="flex items-center space-x-2 md:space-x-4">
                         <button
                             onClick={() => setSelectedLeads([])}

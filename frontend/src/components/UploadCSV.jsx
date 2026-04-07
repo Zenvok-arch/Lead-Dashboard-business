@@ -61,7 +61,7 @@ const UploadCSV = ({ onUploadSuccess }) => {
                 fileInputRef.current.value = '';
             }
             onUploadSuccess(response.data.leadsAdded);
-            
+
             setTimeout(() => {
                 setStatus((current) => current?.type === 'success' ? null : current);
             }, 5000);
@@ -76,10 +76,9 @@ const UploadCSV = ({ onUploadSuccess }) => {
 
     return (
         <div className="w-full flex flex-col space-y-4">
-            <div 
-                className={`border-2 border-dashed rounded-2xl p-8 flex flex-col items-center justify-center transition-all ${
-                    isDragging ? 'border-primary bg-primary/10' : 'border-white/20 bg-dark/50 hover:bg-white/5'
-                }`}
+            <div
+                className={`border-2 border-dashed rounded-2xl p-8 flex flex-col items-center justify-center transition-all ${isDragging ? 'border-primary bg-primary/10' : 'border-white/20 bg-dark/50 hover:bg-white/5'
+                    }`}
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
@@ -89,7 +88,7 @@ const UploadCSV = ({ onUploadSuccess }) => {
                 </div>
                 <h3 className="text-xl font-bold gradient-text text-center">Drag & Drop CSVs</h3>
                 <p className="text-gray-400 text-sm text-center mb-4">Or click to select multiple files</p>
-                
+
                 <label className="cursor-pointer bg-dark/50 border border-primary/30 rounded-lg px-6 py-3 hover:bg-primary/20 transition-all shadow-lg text-white font-bold text-sm">
                     Browse Files
                     <input type="file" className="hidden" accept=".csv" multiple onChange={handleFileChange} ref={fileInputRef} />
@@ -101,7 +100,7 @@ const UploadCSV = ({ onUploadSuccess }) => {
                     {files.map((file, index) => (
                         <div key={index} className="flex items-center justify-between bg-white/5 p-2 rounded-lg border border-white/10">
                             <div className="flex items-center space-x-2 overflow-hidden">
-                                <FileText size={16} className="text-primary flex-shrink-0" />
+                                <FileText size={16} className="text-primary shrink-0" />
                                 <span className="text-xs text-gray-300 truncate w-32 md:w-48">{file.name}</span>
                             </div>
                             <button onClick={() => removeFile(index)} className="text-gray-500 hover:text-red-400 transition-colors">
@@ -115,9 +114,8 @@ const UploadCSV = ({ onUploadSuccess }) => {
             <button
                 onClick={handleUpload}
                 disabled={files.length === 0 || loading}
-                className={`w-full py-3 rounded-xl font-bold transition-all text-sm ${
-                    files.length === 0 || loading ? "bg-gray-700 text-gray-400 cursor-not-allowed" : "bg-gradient-main text-white shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95"
-                }`}
+                className={`w-full py-3 rounded-xl font-bold transition-all text-sm ${files.length === 0 || loading ? "bg-gray-700 text-gray-400 cursor-not-allowed" : "bg-gradient-main text-white shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95"
+                    }`}
             >
                 {loading ? "Processing..." : `Upload ${files.length > 0 ? files.length : ''} File${files.length !== 1 ? 's' : ''}`}
             </button>
