@@ -1,7 +1,7 @@
 import React from 'react';
-import { Phone, MessageCircle, MapPin, ExternalLink, Edit3, Trash2, Star } from 'lucide-react';
+import { Phone, MessageCircle, MapPin, ExternalLink, Edit3, Trash2, Star, Bell } from 'lucide-react';
 
-const LeadTable = ({ leads, onEdit, onDelete, selectedLeads = [], setSelectedLeads = () => { }, onUpdateLead }) => {
+const LeadTable = ({ leads, onEdit, onDelete, selectedLeads = [], setSelectedLeads = () => { }, onUpdateLead, onSetReminder }) => {
 
     // Select all logic
     const handleSelectAll = (e) => {
@@ -119,6 +119,11 @@ const LeadTable = ({ leads, onEdit, onDelete, selectedLeads = [], setSelectedLea
                                                 Contacted: {formatRelativeTime(lead.lastContacted)}
                                             </div>
                                         )}
+                                        {lead.reminderDate && (
+                                            <div className="text-[10px] text-orange-400 font-bold bg-orange-500/10 px-2 py-0.5 rounded-full mt-1 border border-orange-500/20">
+                                                Due: {formatRelativeTime(lead.reminderDate)}
+                                            </div>
+                                        )}
                                     </div>
                                 </td>
                                 <td className="px-6 py-4">
@@ -135,6 +140,9 @@ const LeadTable = ({ leads, onEdit, onDelete, selectedLeads = [], setSelectedLea
                                                 <MapPin size={14} />
                                             </a>
                                         )}
+                                        <button onClick={() => onSetReminder(lead)} className="w-8 h-8 rounded-full bg-orange-500/20 text-orange-500 flex items-center justify-center hover:bg-orange-500 hover:text-white transition-all shadow-lg shadow-orange-500/20" title="Set Reminder">
+                                            <Bell size={14} />
+                                        </button>
                                         <div className="h-6 w-px bg-white/10 mx-1"></div>
                                         <button onClick={() => onEdit(lead)} className="w-8 h-8 rounded-full bg-purple-500/20 text-purple-500 flex items-center justify-center hover:bg-purple-500 hover:text-white transition-all" title="Edit">
                                             <Edit3 size={14} />
@@ -185,6 +193,11 @@ const LeadTable = ({ leads, onEdit, onDelete, selectedLeads = [], setSelectedLea
                                         {formatRelativeTime(lead.lastContacted)}
                                     </span>
                                 )}
+                                {lead.reminderDate && (
+                                    <div className="text-[9px] text-orange-400 font-bold bg-orange-500/10 px-2 py-0.5 rounded-full mt-1 border border-orange-500/20">
+                                        Due: {formatRelativeTime(lead.reminderDate)}
+                                    </div>
+                                )}
                             </div>
                         </div>
 
@@ -221,6 +234,9 @@ const LeadTable = ({ leads, onEdit, onDelete, selectedLeads = [], setSelectedLea
                                         <MapPin size={16} />
                                     </a>
                                 )}
+                                <button onClick={() => onSetReminder(lead)} className="w-10 h-10 rounded-full bg-orange-500/20 text-orange-500 flex items-center justify-center hover:bg-orange-500 hover:text-white transition-all active:scale-95" title="Set Reminder">
+                                    <Bell size={16} />
+                                </button>
                             </div>
 
                             <div className="flex items-center space-x-2">

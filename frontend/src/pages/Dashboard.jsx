@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Plus, BarChart3, Users, PhoneCall, TrendingUp, LogOut, Menu, X, Trash2, Play } from 'lucide-react';
+import { Search, Plus, BarChart3, Users, PhoneCall, TrendingUp, LogOut, Menu, X, Trash2, Play, BellRing, Calendar, Loader2, CalendarDays } from 'lucide-react';
 import LeadTable from '../components/LeadTable';
 import LeadForm from '../components/LeadForm';
+import AnalyticsOverview from '../components/AnalyticsOverview';
 import * as api from '../services/api';
 
 const Dashboard = () => {
@@ -21,6 +22,11 @@ const Dashboard = () => {
     const [editingLead, setEditingLead] = useState(null);
     const [loading, setLoading] = useState(true);
     const [selectedLeads, setSelectedLeads] = useState([]);
+    
+    // Feature States
+    const [viewMode, setViewMode] = useState('list'); // 'list' or 'analytics'
+    const [reminderModalLead, setReminderModalLead] = useState(null);
+    const [reminderDate, setReminderDate] = useState('');
 
     const fetchLeads = async () => {
         setLoading(true);
@@ -149,6 +155,30 @@ const Dashboard = () => {
         }
     };
 
+    const handleSetReminder = async () => {
+        if (!reminderModalLead || !reminderDate) return;
+        try {
+            await api.updateLead(reminderModalLead._id, { reminderDate: new Date(reminderDate) });
+            setReminderModalLead(null);
+            setReminderDate('');
+            fetchLeads();
+        } catch (err) {
+            console.error('Error setting reminder:', err);
+        }
+    };
+
+    const handleClearReminder = async () => {
+        if (!reminderModalLead) return;
+        try {
+            await api.updateLead(reminderModalLead._id, { reminderDate: null });
+            setReminderModalLead(null);
+            setReminderDate('');
+            fetchLeads();
+        } catch (err) {
+            console.error('Error clearing reminder:', err);
+        }
+    };
+
     const callNextLead = () => {
         const nextLead = filteredLeads.find(l => l.status === 'Not Called');
         if (nextLead) {
@@ -170,6 +200,21 @@ const Dashboard = () => {
         return lead.rating >= 4 && lead.reviews >= 50 && noWebsite;
     }).length;
 
+    // Determine overdue / due today reminders
+    const overdueReminders = safeLeads.filter(lead => lead.reminderDate && new Date(lead.reminderDate) <= new Date());
+
+    if (loading && leads.length === 0) {
+        return (
+            <div className="min-h-screen bg-dark flex flex-col items-center justify-center space-y-6">
+                <div className="relative">
+                    <div className="absolute inset-0 bg-primary opacity-20 blur-xl rounded-full animate-pulse"></div>
+                    <Loader2 className="animate-spin text-primary relative z-10" size={48} strokeWidth={2.5} />
+                </div>
+                <h2 className="text-xl font-bold gradient-text animate-pulse tracking-wide">Syncing Workspace...</h2>
+            </div>
+        );
+    }
+
     return (
         <div className="min-h-screen bg-dark text-white p-6 md:p-12">
             {/* Header */}
@@ -187,6 +232,22 @@ const Dashboard = () => {
                     </button>
                 </div>
                 <div className="flex flex-wrap items-center justify-start md:justify-end gap-3 w-full md:w-auto">
+                    {/* View Mode Toggles */}
+                    <div className="glass p-1 rounded-xl flex items-center space-x-1 mr-2 border border-white/5 shadow-inner">
+                        <button 
+                            onClick={() => setViewMode('list')} 
+                            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${viewMode === 'list' ? 'bg-primary/20 text-primary shadow-lg shadow-primary/10' : 'text-gray-400 hover:text-white'}`}
+                        >
+                            List View
+                        </button>
+                        <button 
+                            onClick={() => setViewMode('analytics')} 
+                            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${viewMode === 'analytics' ? 'bg-accent/20 text-accent shadow-lg shadow-accent/10' : 'text-gray-400 hover:text-white'}`}
+                        >
+                            Analytics
+                        </button>
+                    </div>
+
                     <button
                         onClick={callNextLead}
                         className="glass text-primary border border-primary/30 px-5 py-2.5 rounded-xl font-bold flex items-center space-x-2 shadow-xl shadow-primary/10 hover:bg-primary/20 hover:text-white transition-all group"
@@ -226,6 +287,11 @@ const Dashboard = () => {
             </div>
 
             {/* Main Content */}
+            {viewMode === 'analytics' ? (
+                <div className="max-w-7xl mx-auto">
+                    <AnalyticsOverview leads={Array.isArray(leads) ? leads : []} />
+                </div>
+            ) : (
             <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-4 gap-8">
                 {/* Sidebar Overlay */}
                 {isSidebarOpen && (
@@ -354,6 +420,30 @@ const Dashboard = () => {
 
                 {/* Table Area */}
                 <div className="lg:col-span-3">
+                    
+                    {/* Due For Follow Up Section */}
+                    {overdueReminders.length > 0 && (
+                        <div className="mb-6 p-5 rounded-2xl bg-orange-500/10 border border-orange-500/30 shadow-[0_0_20px_rgba(249,115,22,0.1)] flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+                            <div className="flex items-center space-x-4">
+                                <div className="p-3 bg-orange-500/20 rounded-xl text-orange-500 animate-pulse">
+                                    <BellRing size={24} />
+                                </div>
+                                <div>
+                                    <h3 className="text-orange-400 font-black text-lg">Due For Follow-up</h3>
+                                    <p className="text-orange-200/60 text-sm">You have {overdueReminders.length} lead{overdueReminders.length > 1 ? 's' : ''} with pending reminders right now!</p>
+                                </div>
+                            </div>
+                            <div className="flex gap-2">
+                                <button onClick={() => setFilteredLeads(overdueReminders)} className="px-4 py-2 bg-orange-500/20 text-orange-400 font-bold text-sm rounded-xl hover:bg-orange-500 hover:text-white transition-all shadow-lg">
+                                    View Reminders
+                                </button>
+                                <button onClick={() => setFilteredLeads(leads)} className="px-4 py-2 border border-orange-500/30 text-orange-400/60 font-bold text-sm rounded-xl hover:bg-orange-500/10 hover:text-orange-400 transition-all">
+                                    Clear Filter
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
                     <div className="mb-6 space-y-4">
                         <div className="w-full bg-red-500/10 border border-red-500/20 shadow-[0_0_15px_rgba(239,68,68,0.15)] rounded-2xl p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                             <div className="flex items-center space-x-4">
@@ -400,9 +490,11 @@ const Dashboard = () => {
                         selectedLeads={selectedLeads}
                         setSelectedLeads={setSelectedLeads}
                         onUpdateLead={handleUpdateLeadStatus}
+                        onSetReminder={(lead) => setReminderModalLead(lead)}
                     />
                 </div>
             </div>
+            )}
 
             {/* Form Modal */}
             {isFormOpen && (
@@ -418,6 +510,87 @@ const Dashboard = () => {
                         fetchLeads();
                     }}
                 />
+            )}
+
+            {/* Reminder Modal */}
+            {reminderModalLead && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                    <div className="glass w-full max-w-md rounded-3xl p-6 md:p-8 shadow-2xl border border-white/20 animate-in fade-in zoom-in duration-300 relative">
+                        <button onClick={() => setReminderModalLead(null)} className="absolute top-6 right-6 p-2 hover:bg-white/10 rounded-full transition-colors text-gray-400 hover:text-white shrink-0">
+                            <X size={20} />
+                        </button>
+                        
+                        <div className="flex items-center space-x-4 mb-6">
+                            <div className="p-3 bg-orange-500/20 rounded-2xl text-orange-500 mt-1 shadow-lg shadow-orange-500/10">
+                                <Calendar size={24} />
+                            </div>
+                            <div>
+                                <h2 className="text-xl font-bold gradient-text">Set Reminder</h2>
+                                <p className="text-sm text-gray-400 mt-1">For <span className="font-bold text-gray-300">{reminderModalLead.name}</span></p>
+                                {reminderModalLead.reminderDate && (
+                                    <div className="inline-block mt-2 px-3 py-1 bg-white/5 border border-white/10 rounded-full">
+                                        <p className="text-xs text-orange-400 font-bold">Currently set: {new Date(reminderModalLead.reminderDate).toLocaleString()}</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="space-y-5">
+                            <div className="grid grid-cols-2 gap-3">
+                                <button
+                                    onClick={() => {
+                                        const d = new Date(); d.setDate(d.getDate() + 1); d.setHours(10, 0, 0, 0); 
+                                        setReminderDate(d.toISOString().slice(0, 16));
+                                    }}
+                                    className="px-4 py-3 rounded-xl border border-white/10 bg-dark/50 text-sm font-bold text-gray-300 hover:bg-white/10 transition-all text-center group"
+                                >
+                                    Tomorrow 10 AM
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        const d = new Date(); d.setDate(d.getDate() + 7); d.setHours(10, 0, 0, 0); 
+                                        setReminderDate(d.toISOString().slice(0, 16));
+                                    }}
+                                    className="px-4 py-3 rounded-xl border border-white/10 bg-dark/50 text-sm font-bold text-gray-300 hover:bg-white/10 transition-all text-center group"
+                                >
+                                    Next Week
+                                </button>
+                            </div>
+
+                            <div className="relative group">
+                                <label className="text-gray-400 font-bold block text-sm mb-2 group-hover:text-primary transition-colors">Custom Date & Time</label>
+                                <div className="relative flex items-center">
+                                    <input
+                                        type="datetime-local"
+                                        value={reminderDate}
+                                        onChange={(e) => setReminderDate(e.target.value)}
+                                        className="custom-datetime-input w-full bg-dark/80 border border-white/10 rounded-xl pl-12 pr-4 py-3 focus:outline-none focus:border-primary/50 focus:shadow-[0_0_20px_rgba(99,102,241,0.3)] transition-all text-sm font-medium text-white appearance-none cursor-pointer hover:border-white/30"
+                                        min={new Date().toISOString().slice(0, 16)}
+                                    />
+                                    <CalendarDays className="absolute left-4 text-primary w-5 h-5 opacity-80 group-focus-within:animate-pulse group-focus-within:opacity-100 drop-shadow-[0_0_8px_rgba(99,102,241,0.5)] transition-all pointer-events-none" />
+                                </div>
+                            </div>
+
+                            <div className="pt-4 flex flex-col gap-3">
+                                <div className="flex gap-3">
+                                    <button onClick={() => setReminderModalLead(null)} className="flex-1 py-3 px-4 rounded-xl font-bold bg-white/5 border border-white/10 text-gray-300 hover:bg-white/10 transition-all">
+                                        Cancel
+                                    </button>
+                                    <button onClick={handleSetReminder} disabled={!reminderDate} className="flex-1 py-3 px-4 bg-gradient-main text-white rounded-xl font-bold hover:scale-[1.02] transition-transform shadow-xl shadow-primary/20 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100">
+                                        <BellRing size={16} />
+                                        <span>Save</span>
+                                    </button>
+                                </div>
+                                {reminderModalLead.reminderDate && (
+                                    <button onClick={handleClearReminder} className="w-full py-3 px-4 rounded-xl font-bold border border-red-500/30 text-red-400 bg-red-500/10 hover:bg-red-500 hover:text-white transition-all shadow-lg shadow-red-500/10 group flex items-center justify-center space-x-2">
+                                        <Trash2 size={16} className="group-hover:animate-bounce" />
+                                        <span>Clear Active Reminder</span>
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
             )}
 
             {/* Bulk Action Popup */}

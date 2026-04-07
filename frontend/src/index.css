@@ -51,3 +51,4 @@ body {
   color: transparent;
   -webkit-text-fill-color: transparent;
 }
+@import "./inputs.css";
