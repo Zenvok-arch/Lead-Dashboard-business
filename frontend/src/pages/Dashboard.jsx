@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Plus, BarChart3, Users, PhoneCall, TrendingUp, LogOut, Menu, X, Trash2, Play } from 'lucide-react';
 import LeadTable from '../components/LeadTable';
-import UploadCSV from '../components/UploadCSV';
 import LeadForm from '../components/LeadForm';
 import * as api from '../services/api';
 
@@ -16,6 +15,7 @@ const Dashboard = () => {
     const [maxReviews, setMaxReviews] = useState('');
     const [sortBy, setSortBy] = useState('');
     const [noWebsiteOnly, setNoWebsiteOnly] = useState(false);
+    const [showHotLeadsOnly, setShowHotLeadsOnly] = useState(false);
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [editingLead, setEditingLead] = useState(null);
@@ -66,6 +66,12 @@ const Dashboard = () => {
         if (noWebsiteOnly) {
             result = result.filter(lead => !lead.website || lead.website.trim() === "");
         }
+        if (showHotLeadsOnly) {
+            result = result.filter(lead => {
+                const noWeb = !lead.website || lead.website.trim() === "";
+                return lead.rating >= 4 && lead.reviews >= 50 && noWeb;
+            });
+        }
 
         if (sortBy) {
             const [field, order] = sortBy.split('-');
@@ -88,7 +94,7 @@ const Dashboard = () => {
             });
         }
         setFilteredLeads(result);
-    }, [search, statusFilter, minRating, maxRating, minReviews, maxReviews, noWebsiteOnly, sortBy, leads]);
+    }, [search, statusFilter, minRating, maxRating, minReviews, maxReviews, noWebsiteOnly, showHotLeadsOnly, sortBy, leads]);
 
     const handleSaveLead = async (formData) => {
         try {
@@ -239,25 +245,11 @@ const Dashboard = () => {
                         </button>
                     </div>
 
-                    <UploadCSV onUploadSuccess={() => fetchLeads()} />
-
-                    <div className="glass p-6 rounded-3xl border border-white/5 space-y-6">
+                    <div className="glass p-6 rounded-3xl border border-white/5 space-y-6 mt-4 lg:mt-0">
                         <h3 className="text-lg font-bold flex items-center space-x-2">
                             <BarChart3 className="text-primary" size={20} />
                             <span>Filters</span>
                         </h3>
-
-                        {/* Search */}
-                        <div className="relative group">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-primary transition-colors" size={18} />
-                            <input
-                                type="text"
-                                placeholder="Search by name/phone..."
-                                value={search}
-                                onChange={(e) => setSearch(e.target.value)}
-                                className="w-full bg-dark/50 border border-white/10 rounded-2xl pl-12 pr-4 py-3 text-sm focus:outline-none focus:border-primary transition-all shadow-inner"
-                            />
-                        </div>
 
                         {/* Status Filter */}
                         <div className="grid grid-cols-2 gap-2">
@@ -362,8 +354,8 @@ const Dashboard = () => {
 
                 {/* Table Area */}
                 <div className="lg:col-span-3">
-                    <div className="mb-6">
-                        <div className="w-full bg-red-500/10 border border-red-500/20 shadow-[0_0_15px_rgba(239,68,68,0.15)] rounded-2xl p-4 flex items-center justify-between">
+                    <div className="mb-6 space-y-4">
+                        <div className="w-full bg-red-500/10 border border-red-500/20 shadow-[0_0_15px_rgba(239,68,68,0.15)] rounded-2xl p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                             <div className="flex items-center space-x-4">
                                 <div className="text-3xl bg-red-500/20 p-3 rounded-full flex items-center justify-center">🔥</div>
                                 <div>
@@ -371,7 +363,33 @@ const Dashboard = () => {
                                     <p className="text-gray-300 text-xs mt-1">High rating, many reviews, no website.</p>
                                 </div>
                             </div>
-                            <div className="text-3xl font-black text-white">{hotLeadsCount}</div>
+                            <div className="flex items-center space-x-4">
+                                <div className="flex items-center space-x-2">
+                                    <input
+                                        type="checkbox"
+                                        id="showHotLeadsOnly"
+                                        checked={showHotLeadsOnly}
+                                        onChange={(e) => setShowHotLeadsOnly(e.target.checked)}
+                                        className="w-5 h-5 rounded-md border-2 border-red-500/50 bg-dark text-red-500 outline-none focus:outline-none cursor-pointer transition-all appearance-none checked:bg-red-500 checked:border-red-500 relative after:content-[''] after:absolute after:hidden checked:after:block after:left-[5px] after:top-[1px] after:w-1.5 after:h-2.5 after:border-white after:border-b-2 after:border-r-2 after:rotate-45"
+                                    />
+                                    <label htmlFor="showHotLeadsOnly" className="text-red-400 font-bold text-sm cursor-pointer select-none">
+                                        Show Only
+                                    </label>
+                                </div>
+                                <div className="text-3xl font-black text-white">{hotLeadsCount}</div>
+                            </div>
+                        </div>
+
+                        {/* Search moved here */}
+                        <div className="relative group w-full">
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-primary transition-colors" size={18} />
+                            <input
+                                type="text"
+                                placeholder="Search leads by name or phone..."
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                                className="w-full bg-dark/50 border border-white/10 rounded-2xl pl-12 pr-4 py-3 text-sm focus:outline-none focus:border-primary transition-all shadow-inner"
+                            />
                         </div>
                     </div>
 
@@ -395,6 +413,10 @@ const Dashboard = () => {
                         setEditingLead(null);
                     }}
                     onSave={handleSaveLead}
+                    onUploadSuccess={(count) => {
+                        setIsFormOpen(false);
+                        fetchLeads();
+                    }}
                 />
             )}
 

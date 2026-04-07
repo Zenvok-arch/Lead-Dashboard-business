@@ -55,11 +55,11 @@ const LeadTable = ({ leads, onEdit, onDelete, selectedLeads = [], setSelectedLea
     return (
         <div className="glass rounded-2xl border border-white/10 shadow-2xl overflow-hidden">
             {/* Desktop View: Table Layout */}
-            <div className="hidden md:block overflow-x-auto">
-                <table className="w-full text-left border-collapse">
+            <div className="hidden md:block overflow-x-auto w-full">
+                <table className="w-full text-left border-collapse table-fixed">
                     <thead>
                         <tr className="bg-white/5 border-b border-white/10">
-                            <th className="px-6 py-4 text-xs font-bold w-10">
+                            <th className="px-6 py-4 text-xs font-bold w-16">
                                 <input
                                     type="checkbox"
                                     className="w-5 h-5 rounded-md border-2 border-white/20 bg-dark text-primary outline-none focus:outline-none cursor-pointer transition-all appearance-none checked:bg-primary checked:border-primary relative after:content-[''] after:absolute after:hidden checked:after:block after:left-[5px] after:top-[1px] after:w-1.5 after:h-2.5 after:border-white after:border-b-2 after:border-r-2 after:rotate-45"
@@ -67,9 +67,9 @@ const LeadTable = ({ leads, onEdit, onDelete, selectedLeads = [], setSelectedLea
                                     onChange={handleSelectAll}
                                 />
                             </th>
-                            <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Name</th>
-                            <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Phone / Rating</th>
-                            <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider text-center">Status</th>
+                            <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider w-1/3">Name</th>
+                            <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider w-1/5">Phone / Rating</th>
+                            <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider text-center w-1/6">Status</th>
                             <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider text-right">Actions</th>
                         </tr>
                     </thead>
@@ -84,17 +84,17 @@ const LeadTable = ({ leads, onEdit, onDelete, selectedLeads = [], setSelectedLea
                                         onChange={(e) => handleSelectLead(e, lead._id)}
                                     />
                                 </td>
-                                <td className="px-6 py-4">
-                                    <div className="flex flex-col">
-                                        <span className="text-white font-medium text-lg">{lead.name}</span>
+                                <td className="px-6 py-4 overflow-hidden">
+                                    <div className="flex flex-col min-w-0 w-full">
+                                        <span className="text-white font-medium text-lg truncate w-full" title={lead.name}>{lead.name}</span>
                                         {lead.website && (
-                                            <a href={lead.website} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline flex items-center space-x-1 mt-1 w-fit">
-                                                <span>{lead.website.replace(/(^\w+:|^)\/\//, '')}</span>
-                                                <ExternalLink size={10} />
+                                            <a href={lead.website} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline flex items-center space-x-1 mt-1 w-fit max-w-full min-w-0">
+                                                <span className="truncate">{lead.website.replace(/(^\w+:|^)\/\//, '')}</span>
+                                                <ExternalLink size={10} className="shrink-0" />
                                             </a>
                                         )}
                                         {lead.notes && (
-                                            <div className="mt-2 text-xs text-gray-400 max-w-[200px] sm:max-w-xs break-words" title={lead.notes}>
+                                            <div className="mt-2 text-xs text-gray-400 w-full truncate" title={lead.notes}>
                                                 <span className="font-bold text-gray-500">Note: </span>{lead.notes}
                                             </div>
                                         )}

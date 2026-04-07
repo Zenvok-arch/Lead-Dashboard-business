@@ -10,7 +10,8 @@ const storage = multer.diskStorage({
         cb(null, 'uploads/');
     },
     filename: (req, file, cb) => {
-        cb(null, Date.now() + path.extname(file.originalname));
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, uniqueSuffix + path.extname(file.originalname));
     }
 });
 
@@ -22,6 +23,6 @@ router.post('/', leadController.createLead);
 router.delete('/bulk', leadController.bulkDeleteLeads);
 router.put('/:id', leadController.updateLead);
 router.delete('/:id', leadController.deleteLead);
-router.post('/upload', upload.single('csvFile'), leadController.uploadCSV);
+router.post('/upload', upload.array('csvFiles', 50), leadController.uploadCSV);
 
 module.exports = router;

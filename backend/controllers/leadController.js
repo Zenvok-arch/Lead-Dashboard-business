@@ -64,81 +64,104 @@ exports.bulkDeleteLeads = async (req, res) => {
 };
 
 // @route   POST /api/leads/upload
-// @desc    Upload CSV and parse
+// @desc    Upload CSV and parse multiple files
 exports.uploadCSV = async (req, res) => {
-    if (!req.file) return res.status(400).json({ error: "Please upload a CSV file" });
+    if (!req.files || req.files.length === 0) return res.status(400).json({ error: "Please upload at least one CSV file" });
 
-    const results = [];
-    fs.createReadStream(req.file.path)
-        .pipe(csv())
-        .on('data', (data) => results.push(data))
-        .on('end', async () => {
-            try {
-                let count = 0;
-                for (const rawRow of results) {
-                    const row = {};
-                    for (let k in rawRow) {
-                        const newK = k.replace(/^\uFEFF/, '').trim().toLowerCase();
-                        row[newK] = typeof rawRow[k] === 'string' ? rawRow[k].trim() : rawRow[k];
-                    }
+    let totalCount = 0;
 
-                    // Helper to find a value by a loosely matching key
-                    const findValue = (keywords) => {
-                        for (let key in row) {
-                            if (keywords.some(kw => key.includes(kw))) {
-                                return row[key];
+    const processFile = (file) => {
+        return new Promise((resolve, reject) => {
+            const results = [];
+            fs.createReadStream(file.path)
+                .pipe(csv())
+                .on('data', (data) => results.push(data))
+                .on('error', (err) => reject(err))
+                .on('end', async () => {
+                    try {
+                        let count = 0;
+                        for (const rawRow of results) {
+                            const row = {};
+                            for (let k in rawRow) {
+                                const newK = k.replace(/^\uFEFF/, '').trim().toLowerCase();
+                                row[newK] = typeof rawRow[k] === 'string' ? rawRow[k].trim() : rawRow[k];
+                            }
+
+                            // Helper to find a value by a loosely matching key
+                            const findValue = (keywords) => {
+                                for (let key in row) {
+                                    if (keywords.some(kw => key.includes(kw))) {
+                                        return row[key];
+                                    }
+                                }
+                                return "";
+                            };
+
+                            // Normalize fields aggressively using keyword matching
+                            const name = findValue(["name", "business", "company", "title"]);
+                            const phone = findValue(["phone", "mobile", "contact", "tel", "whatsapp"]);
+                            let ratingVal = findValue(["rating", "star"]);
+                            let reviewsVal = findValue(["review", "count"]);
+                            const website = findValue(["website", "url", "domain"]);
+                            let mapsLink = findValue(["map", "link"]);
+
+                            if (!mapsLink) {
+                                // Fallback: search values for google maps URL
+                                mapsLink = Object.values(row).find(val => typeof val === 'string' && val.includes('maps.google')) || "";
+                            }
+
+                            if (!phone || !name) continue; // skip if crucial data is missing
+
+                            const rating = parseFloat(ratingVal || 0);
+                            const reviews = Number(reviewsVal) || 0;
+
+                            // Duplicate check (normalized phone)
+                            const cleanPhone = phone.toString().replace(/[^0-9+]/g, '');
+
+                            if (cleanPhone.length >= 6) {
+                                const existing = await Lead.findOne({ phone: cleanPhone });
+                                if (!existing) {
+                                    const newLead = new Lead({
+                                        name,
+                                        phone: cleanPhone,
+                                        rating: isNaN(rating) ? 0 : rating,
+                                        reviews: isNaN(reviews) ? 0 : reviews,
+                                        website,
+                                        mapsLink,
+                                        status: "Not Called",
+                                    });
+                                    await newLead.save();
+                                    count++;
+                                }
                             }
                         }
-                        return "";
-                    };
-
-                    // Normalize fields aggressively using keyword matching
-                    const name = findValue(["name", "business", "company", "title"]);
-                    const phone = findValue(["phone", "mobile", "contact", "tel", "whatsapp"]);
-                    let ratingVal = findValue(["rating", "star"]);
-                    let reviewsVal = findValue(["review", "count"]);
-                    const website = findValue(["website", "Website", "url", "domain"]);
-                    let mapsLink = findValue(["map", "link"]);
-
-                    if (!mapsLink) {
-                        // Fallback: search values for google maps URL
-                        mapsLink = Object.values(row).find(val => typeof val === 'string' && val.includes('maps.google')) || "";
+                        // Cleanup file
+                        fs.unlinkSync(file.path);
+                        resolve(count);
+                    } catch (err) {
+                        // Attempt cleanup on error
+                        if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
+                        reject(err);
                     }
-
-                    if (!phone || !name) continue; // skip if crucial data is missing
-
-                    const rating = parseFloat(ratingVal || 0);
-                    const reviews = Number(reviewsVal) || 0;
-
-                    // Duplicate check (normalized phone)
-                    const cleanPhone = phone.toString().replace(/[^0-9+]/g, '');
-
-                    if (cleanPhone.length >= 6) {
-                        const existing = await Lead.findOne({ phone: cleanPhone });
-                        if (!existing) {
-                            const newLead = new Lead({
-                                name,
-                                phone: cleanPhone,
-                                rating: isNaN(rating) ? 0 : rating,
-                                reviews: isNaN(reviews) ? 0 : reviews,
-                                website,
-                                mapsLink,
-                                status: "Not Called",
-                            });
-                            await newLead.save();
-                            count++;
-                        }
-                    }
-                }
-                // Cleanup file
-                fs.unlinkSync(req.file.path);
-
-                if (count === 0) {
-                    return res.status(400).json({ error: "No new leads added. They may be duplicates or missing valid Phone/Name headers." });
-                }
-                res.json({ msg: "CSV Processed", leadsAdded: count });
-            } catch (err) {
-                res.status(500).json({ error: err.message });
-            }
+                });
         });
+    };
+
+    try {
+        for (const file of req.files) {
+            const count = await processFile(file);
+            totalCount += count;
+        }
+
+        if (totalCount === 0) {
+            return res.status(400).json({ error: "No new leads added. They may be duplicates or missing valid Phone/Name headers." });
+        }
+        res.json({ msg: "CSV Processed", leadsAdded: totalCount });
+    } catch (err) {
+        // Cleanup any remaining files if an abort error occurred
+        for (const file of req.files) {
+            if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
+        }
+        res.status(500).json({ error: err.message });
+    }
 };
