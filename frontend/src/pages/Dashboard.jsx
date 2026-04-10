@@ -540,7 +540,8 @@ const Dashboard = () => {
                                 <button
                                     onClick={() => {
                                         const d = new Date(); d.setDate(d.getDate() + 1); d.setHours(10, 0, 0, 0); 
-                                        setReminderDate(d.toISOString().slice(0, 16));
+                                        const offset = d.getTimezoneOffset() * 60000;
+                                        setReminderDate(new Date(d.getTime() - offset).toISOString().slice(0, 16));
                                     }}
                                     className="px-4 py-3 rounded-xl border border-white/10 bg-dark/50 text-sm font-bold text-gray-300 hover:bg-white/10 transition-all text-center group"
                                 >
@@ -549,7 +550,8 @@ const Dashboard = () => {
                                 <button
                                     onClick={() => {
                                         const d = new Date(); d.setDate(d.getDate() + 7); d.setHours(10, 0, 0, 0); 
-                                        setReminderDate(d.toISOString().slice(0, 16));
+                                        const offset = d.getTimezoneOffset() * 60000;
+                                        setReminderDate(new Date(d.getTime() - offset).toISOString().slice(0, 16));
                                     }}
                                     className="px-4 py-3 rounded-xl border border-white/10 bg-dark/50 text-sm font-bold text-gray-300 hover:bg-white/10 transition-all text-center group"
                                 >
@@ -565,7 +567,11 @@ const Dashboard = () => {
                                         value={reminderDate}
                                         onChange={(e) => setReminderDate(e.target.value)}
                                         className="custom-datetime-input w-full bg-dark/80 border border-white/10 rounded-xl pl-12 pr-4 py-3 focus:outline-none focus:border-primary/50 focus:shadow-[0_0_20px_rgba(99,102,241,0.3)] transition-all text-sm font-medium text-white appearance-none cursor-pointer hover:border-white/30"
-                                        min={new Date().toISOString().slice(0, 16)}
+                                        min={(() => {
+                                            const now = new Date();
+                                            const offset = now.getTimezoneOffset() * 60000;
+                                            return new Date(now.getTime() - offset).toISOString().slice(0, 16);
+                                        })()}
                                     />
                                     <CalendarDays className="absolute left-4 text-primary w-5 h-5 opacity-80 group-focus-within:animate-pulse group-focus-within:opacity-100 drop-shadow-[0_0_8px_rgba(99,102,241,0.5)] transition-all pointer-events-none" />
                                 </div>

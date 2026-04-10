@@ -33,14 +33,27 @@ const LeadTable = ({ leads, onEdit, onDelete, selectedLeads = [], setSelectedLea
 
     const formatRelativeTime = (dateString) => {
         if (!dateString) return '';
-        const diff = new Date() - new Date(dateString);
-        const hours = Math.floor(diff / (1000 * 60 * 60));
+        const date = new Date(dateString);
+        const now = new Date();
+        const diff = now - date;
+        const isFuture = diff < 0;
+        const absDiff = Math.abs(diff);
+        
+        const hours = Math.floor(absDiff / (1000 * 60 * 60));
         const days = Math.floor(hours / 24);
-        if (days > 7) return new Date(dateString).toLocaleDateString();
-        if (days > 0) return `${days}d ago`;
-        if (hours > 0) return `${hours}h ago`;
-        const mins = Math.floor(diff / 60000);
-        return mins > 0 ? `${mins}m ago` : 'Just now';
+        const mins = Math.floor(absDiff / 60000);
+        
+        if (isFuture) {
+            if (days > 7) return date.toLocaleDateString();
+            if (days > 0) return `in ${days}d`;
+            if (hours > 0) return `in ${hours}h`;
+            return mins > 0 ? `in ${mins}m` : 'moments away';
+        } else {
+            if (days > 7) return date.toLocaleDateString();
+            if (days > 0) return `${days}d ago`;
+            if (hours > 0) return `${hours}h ago`;
+            return mins > 0 ? `${mins}m ago` : 'Just now';
+        }
     };
 
     const getStatusColor = (status) => {
