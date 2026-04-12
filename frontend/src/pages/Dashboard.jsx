@@ -27,6 +27,12 @@ const Dashboard = () => {
     const [viewMode, setViewMode] = useState('list'); // 'list' or 'analytics'
     const [reminderModalLead, setReminderModalLead] = useState(null);
     const [reminderDate, setReminderDate] = useState('');
+    const [toast, setToast] = useState(null); // { msg, type: 'success' | 'error' }
+
+    const showToast = (msg, type = 'success') => {
+        setToast({ msg, type });
+        setTimeout(() => setToast(null), 4000);
+    };
 
     const fetchLeads = async () => {
         setLoading(true);
@@ -156,31 +162,45 @@ const Dashboard = () => {
     };
 
     const handleSetReminder = async () => {
-        if (!reminderModalLead || !reminderDate) return;
+        console.log('[Reminder] handleSetReminder called');
+        console.log('[Reminder] Lead:', reminderModalLead?._id, 'Date:', reminderDate);
+
+        if (!reminderModalLead || !reminderDate) {
+            console.warn('[Reminder] Aborted — lead or date missing.');
+            showToast('Please select a date first.', 'error');
+            return;
+        }
         try {
-            // Send as ISO string directly — the datetime-local value is already in local time.
-            // Appending the local timezone offset prevents server-side UTC misinterpretation.
             const localDate = new Date(reminderDate);
-            await api.updateLead(reminderModalLead._id, { reminderDate: localDate.toISOString() });
+            const isoDate = localDate.toISOString();
+            console.log('[Reminder] Sending PUT with reminderDate:', isoDate);
+
+            const res = await api.updateLead(reminderModalLead._id, { reminderDate: isoDate });
+            console.log('[Reminder] API response:', res?.data);
+
             setReminderModalLead(null);
             setReminderDate('');
+            showToast(`Reminder set for ${localDate.toLocaleString()}`);
             fetchLeads();
         } catch (err) {
-            console.error('Error setting reminder:', err);
-            alert('Failed to set reminder. Check your connection and try again.');
+            console.error('[Reminder] Error setting reminder:', err?.response?.data || err.message);
+            showToast(`Failed: ${err?.response?.data?.error || err.message}`, 'error');
         }
     };
 
     const handleClearReminder = async () => {
+        console.log('[Reminder] handleClearReminder called');
         if (!reminderModalLead) return;
         try {
-            await api.updateLead(reminderModalLead._id, { reminderDate: null });
+            const res = await api.updateLead(reminderModalLead._id, { reminderDate: null });
+            console.log('[Reminder] Clear response:', res?.data);
             setReminderModalLead(null);
             setReminderDate('');
+            showToast('Reminder cleared.');
             fetchLeads();
         } catch (err) {
-            console.error('Error clearing reminder:', err);
-            alert('Failed to clear reminder. Check your connection and try again.');
+            console.error('[Reminder] Error clearing reminder:', err?.response?.data || err.message);
+            showToast(`Failed to clear: ${err?.response?.data?.error || err.message}`, 'error');
         }
     };
 
@@ -637,6 +657,18 @@ const Dashboard = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Toast Notification */}
+            {toast && (
+                <div className={`fixed bottom-24 right-6 z-[100] px-5 py-3 rounded-2xl shadow-2xl font-bold text-sm flex items-center space-x-3 border transition-all animate-in fade-in slide-in-from-bottom-4 duration-300 ${
+                    toast.type === 'error'
+                        ? 'bg-red-500/20 border-red-500/40 text-red-300 shadow-red-500/20'
+                        : 'bg-green-500/20 border-green-500/40 text-green-300 shadow-green-500/20'
+                }`}>
+                    <span>{toast.type === 'error' ? '❌' : '✅'}</span>
+                    <span>{toast.msg}</span>
+                </div>
+            )}
         </div>
     );
 };
