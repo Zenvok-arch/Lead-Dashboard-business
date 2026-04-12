@@ -1,38 +1,34 @@
-# 🚀 Future Features & Upgrades Roadmap
+# 🚀 Lead Dashboard Roadmap
 
-This document outlines the planned enhancements and potential upgrades for the **Lead Management Dashboard**.
-
-## 🧠 AI & Intelligent Automation
-- **AI Lead Scoring**: Use machine learning to rank leads based on their conversion probability using historical data and profile details.
-- **Auto-Summarization**: Automatically summarize lead websites and social profiles using LLMs to provide a quick context before calls.
-- **Smart Reminders**: Predictive reminder suggestions based on typical follow-up cycles for interested leads.
-
-## ✉️ Communication & Outreach
-- **Automated Follow-up Sequences**: Integration with Twilio (SMS/WhatsApp) and SendGrid (Email) to schedule automated "drip" campaigns.
-- **In-App VoIP**: Click-to-call functionality with session recording, transcription, and automatic activity logging.
-- **Templates Dashboard**: Create and manage reusable message templates for WhatsApp and Email outreach.
+This roadmap focuses on core productivity features, team collaboration, and workflow enhancements.
 
 ## 👥 Team & Collaboration
-- **Multi-User Support**: Individual accounts for sales reps with Role-Based Access Control (RBAC).
-- **Lead Assignment**: Assign specific leads to team members with automated notification alerts.
-- **Activity Timeline**: A vertical timeline view for each lead showing every status change, note added, or communication attempt.
+- **Multi-User Accounts**: Individual login credentials for different sales representatives.
+- **Role-Based Access**: Permission levels (Admin, Member, Viewer) to control data visibility.
+- **Lead Assignment**: Assign specific leads to team members to clear ownership and avoid double-calling.
+- **Internal Mentions**: Tag teammates in lead notes to collaborate on high-value accounts.
 
-## 📊 Data & Analytics
-- **Conversion Funnels**: Visual breakdown of lead progression from "Not Called" to "Closed" to identify bottlenecks.
-- **ROI Tracking**: Track revenue generated per lead source (CSV upload batch) to optimize marketing spend.
-- **Advanced Export**: Export filtered and sorted data to Excel, PDF, or sync directly to Google Sheets.
+## ⏳ Activity & History
+- **Lead Timeline**: A detailed, vertical history for every lead showing who changed their status and when.
+- **Manual Task Checklists**: Create custom TODO lists within each lead's profile for multi-step onboarding.
+- **Global Activity Feed**: A sidebar showing recent changes across all leads by all team members.
 
-## 🛠️ User Experience & Tools
-- **Kanban Pipeline View**: A drag-and-drop board for a more visual way to manage the sales pipeline.
-- **Lead Enrichment**: Automatically fetch LinkedIn profiles, company logos, and social links using only the website URL.
-- **Calendar Integration**: Bidirectional sync with Google Calendar and Outlook to manage follow-up appointments.
-- **Custom Fields**: Enable users to add their own custom data points (e.g., "Budget", "Project Type") to the Lead schema.
-- **Dark/Light Mode Toggle**: Allow users to switch between the premium dark glassmorphism and a clean light professional theme.
+## 🛠️ Advanced Tools & Integrations
+- **Kanban Board View**: A drag-and-drop pipeline interface to visualize your sales funnel stages.
+- **Custom Fields**: Add up to 10 user-defined data fields (e.g., "Industry", "Deal Size", "Source") to the lead schema.
+- **Calendar Multi-Sync**: Manually push follow-up reminders directly to Google Calendar or Outlook.
+- **VoIP Click-to-Call**: Direct integration with desktop calling apps for seamless manual outreach.
 
-## 📱 Platform & Performance
-- **PWA Integration**: Make the dashboard installable on mobile devices with offline caching support.
-- **Real-time Sync**: Use WebSockets for multi-user real-time updates when leads are modified by other team members.
-- **Enhanced Search**: Debounced global search that indexes across names, phones, notes, and website metadata.
+## 📊 Data Management
+- **Bulk Import/Export 2.0**: Advanced CSV mapping tool and one-click export to Excel/Google Sheets.
+- **Advanced Filtering**: Multi-select status filters, custom date range pickers, and range-based rating filters.
+- **Global Search**: Search across names, phones, notes, and website URLs simultaneously.
+
+## 📱 Experience & Performance
+- **Mobile PWA**: Optimize the dashboard to be installed as a standalone app on iOS and Android.
+- **Offline Mode**: Access and edit lead data even without an active internet connection (syncs when back online).
+- **Light/Dark Mode**: Toggle between a professional light theme and the premium dark glassmorphism.
+- **Real-time Updates**: Instant UI updates across all logged-in devices when a lead is updated.
 
 ---
 *Last Updated: April 2026*
