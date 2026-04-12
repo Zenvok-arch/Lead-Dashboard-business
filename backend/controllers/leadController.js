@@ -1,7 +1,6 @@
 const Lead = require('../models/Lead');
 const csv = require('csv-parser');
 const fs = require('fs');
-const { CLIENT_RENEG_LIMIT } = require('tls');
 
 // @route   GET /api/leads
 // @desc    Get all leads
@@ -30,9 +29,15 @@ exports.createLead = async (req, res) => {
 // @desc    Update a lead
 exports.updateLead = async (req, res) => {
     try {
-        const lead = await Lead.findByIdAndUpdate(req.params.id, req.body, { returnDocument: 'after' });
+        const lead = await Lead.findByIdAndUpdate(
+            req.params.id,
+            { $set: req.body },
+            { new: true }
+        );
+        if (!lead) return res.status(404).json({ error: 'Lead not found' });
         res.json(lead);
     } catch (err) {
+        console.error('updateLead error:', err.message);
         res.status(400).json({ error: err.message });
     }
 };

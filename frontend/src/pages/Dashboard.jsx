@@ -158,12 +158,16 @@ const Dashboard = () => {
     const handleSetReminder = async () => {
         if (!reminderModalLead || !reminderDate) return;
         try {
-            await api.updateLead(reminderModalLead._id, { reminderDate: new Date(reminderDate) });
+            // Send as ISO string directly — the datetime-local value is already in local time.
+            // Appending the local timezone offset prevents server-side UTC misinterpretation.
+            const localDate = new Date(reminderDate);
+            await api.updateLead(reminderModalLead._id, { reminderDate: localDate.toISOString() });
             setReminderModalLead(null);
             setReminderDate('');
             fetchLeads();
         } catch (err) {
             console.error('Error setting reminder:', err);
+            alert('Failed to set reminder. Check your connection and try again.');
         }
     };
 
@@ -176,6 +180,7 @@ const Dashboard = () => {
             fetchLeads();
         } catch (err) {
             console.error('Error clearing reminder:', err);
+            alert('Failed to clear reminder. Check your connection and try again.');
         }
     };
 
