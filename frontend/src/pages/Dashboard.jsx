@@ -34,6 +34,11 @@ const Dashboard = () => {
         setTimeout(() => setToast(null), 4000);
     };
 
+    // Update a single lead in local state without a full refetch
+    const updateLeadInState = (updatedLead) => {
+        setLeads(prev => prev.map(l => l._id === updatedLead._id ? updatedLead : l));
+    };
+
     const fetchLeads = async () => {
         setLoading(true);
         try {
@@ -178,10 +183,12 @@ const Dashboard = () => {
             const res = await api.updateLead(reminderModalLead._id, { reminderDate: isoDate });
             console.log('[Reminder] API response:', res?.data);
 
+            // Optimistically update local state instantly — no full refetch needed
+            if (res?.data) updateLeadInState(res.data);
+
             setReminderModalLead(null);
             setReminderDate('');
-            showToast(`Reminder set for ${localDate.toLocaleString()}`);
-            fetchLeads();
+            showToast(`⏰ Reminder set for ${localDate.toLocaleString()}`);
         } catch (err) {
             console.error('[Reminder] Error setting reminder:', err?.response?.data || err.message);
             showToast(`Failed: ${err?.response?.data?.error || err.message}`, 'error');
@@ -194,10 +201,13 @@ const Dashboard = () => {
         try {
             const res = await api.updateLead(reminderModalLead._id, { reminderDate: null });
             console.log('[Reminder] Clear response:', res?.data);
+
+            // Optimistically update local state instantly
+            if (res?.data) updateLeadInState(res.data);
+
             setReminderModalLead(null);
             setReminderDate('');
-            showToast('Reminder cleared.');
-            fetchLeads();
+            showToast('✅ Reminder cleared.');
         } catch (err) {
             console.error('[Reminder] Error clearing reminder:', err?.response?.data || err.message);
             showToast(`Failed to clear: ${err?.response?.data?.error || err.message}`, 'error');
